@@ -95,9 +95,14 @@ pub fn handle_focus(
     let args = cmd.args();
     let direction = cmd.direction();
 
-    // Not at edge - simple focus move
+    // Not at edge - move focus
     if !is_at_edge {
-        return Dispatch::call(DispatchType::MoveFocus(direction)).context("Failed to move focus");
+        return if args.position && plugins.hyprscrolling {
+            // Scroller mode: use layoutmsg for proper scrolling focus
+            dispatch("layoutmsg", &format!("focus {}", dir_char(&direction)))
+        } else {
+            Dispatch::call(DispatchType::MoveFocus(direction)).context("Failed to move focus")
+        };
     }
 
     // At edge with monitor flag - switch monitors
