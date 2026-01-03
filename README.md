@@ -1,5 +1,10 @@
-# hyprnavi
-
+<h1>
+  <picture>
+    <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a7/512.webp" type="image/webp">
+    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a7/512.gif" alt="💧" width="32" height="32">
+  </picture>
+  hyprnavi
+</h1>
 Smart navigation for Hyprland. Move focus between windows, and seamlessly continue to adjacent workspaces or monitors at screen edges.
 
 Built for [hyprscrolling](https://github.com/hyprwm/hyprland-plugins/tree/main/hyprscrolling) and [split-monitor-workspaces](https://github.com/Duckonaut/split-monitor-workspaces), but works great standalone.
@@ -81,13 +86,13 @@ The plugin is auto-detected. When active, hyprnavi uses `split-workspace` for pr
 
 ## Behavior Summary
 
-| Flags | At Edge | Not at Edge |
-|-------|---------|-------------|
-| (none) | Next workspace | Focus neighbor |
-| `-m` | Next monitor | Focus neighbor |
-| `-s` | Move window | Swap with neighbor |
-| `-sm` | Move to monitor | Swap with neighbor |
-| `-ps` | Move window | Move across columns* |
+| Flags  | At Edge         | Not at Edge          |
+| ------ | --------------- | -------------------- |
+| (none) | Next workspace  | Focus neighbor       |
+| `-m`   | Next monitor    | Focus neighbor       |
+| `-s`   | Move window     | Swap with neighbor   |
+| `-sm`  | Move to monitor | Swap with neighbor   |
+| `-ps`  | Move window     | Move across columns* |
 
 *When hyprscrolling is detected, uses `layoutmsg movewindowto`. Otherwise falls back to normal swap.
 
