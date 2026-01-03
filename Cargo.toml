@@ -1,15 +1,21 @@
 [package]
-name = "hyprnavi"
-version = "0.2.0"
+name = "hyprnavi-psm"
+version = "0.3.0"
 edition = "2021"
+description = "Smart navigation tool for Hyprland with edge-detection"
+license = "MIT"
+
+[[bin]]
+name = "hyprnavi"
+path = "src/main.rs"
 
 [dependencies]
-anyhow = "1.0.82"
-argh = "0.1.12"
-hyprland = { git = "https://github.com/hyprland-community/hyprland-rs", rev = "116305ab39c69b72e9f19162c4264dbec86be5dd" }
+anyhow = "1.0"
+clap = { version = "4", features = ["derive"] }
+hyprland = { git = "https://github.com/hyprland-community/hyprland-rs" }
 
 [profile.release]
 opt-level = "s"
 lto = true
 codegen-units = 1
-panic = 'abort'
+panic = "abort"

@@ -1,59 +1,72 @@
-use argh::FromArgs;
+use clap::{Parser, Subcommand};
+use hyprland::dispatch::Direction;
 
-/// simple horizontal navigation in hyprland
-#[derive(FromArgs)]
-pub struct Flags {
-    #[argh(subcommand)]
-    pub cmd: Command,
+/// Simple navigation tool for Hyprland with smart edge-detection.
+///
+/// At screen edges, can switch to adjacent workspace (default) or monitor (-m flag).
+#[derive(Parser)]
+#[command(name = "hyprnavi", version, about)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
 }
 
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand)]
+#[derive(Subcommand, Clone, Debug)]
 pub enum Command {
-    Right(CommandRight),
-    Left(CommandLeft),
-    Up(CommandUp),
-    Down(CommandDown),
+    /// Focus right. At edge: next workspace (default) or right monitor (-m)
+    #[command(name = "r")]
+    Right(NavArgs),
+    /// Focus left. At edge: previous workspace (default) or left monitor (-m)
+    #[command(name = "l")]
+    Left(NavArgs),
+    /// Focus up. At edge: previous workspace (default) or upper monitor (-m)
+    #[command(name = "u")]
+    Up(NavArgs),
+    /// Focus down. At edge: next workspace (default) or lower monitor (-m)
+    #[command(name = "d")]
+    Down(NavArgs),
 }
 
-/// Focus on the next window. If the current window is already at the edge, focus on the next workspace.
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "r")]
-pub struct CommandRight {
-    #[argh(switch, description = "swap window")]
-    pub swap: bool,
-    #[argh(
-        option,
-        description = "window border size. Necessary for boundary detection"
-    )]
-    pub bordersize: Option<i32>,
+impl Command {
+    /// Returns the navigation direction for this command.
+    pub fn direction(&self) -> Direction {
+        match self {
+            Self::Up(_) => Direction::Up,
+            Self::Down(_) => Direction::Down,
+            Self::Left(_) => Direction::Left,
+            Self::Right(_) => Direction::Right,
+        }
+    }
+
+    /// Returns the navigation arguments.
+    pub fn args(&self) -> &NavArgs {
+        match self {
+            Self::Up(a) | Self::Down(a) | Self::Left(a) | Self::Right(a) => a,
+        }
+    }
+
+    /// Returns true if this direction goes "forward" (right/down = next workspace).
+    pub fn is_forward(&self) -> bool {
+        matches!(self, Self::Right(_) | Self::Down(_))
+    }
 }
 
-/// Focus on the previous window. If the current window is already at the edge, focus on the previous workspace.
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "l")]
-pub struct CommandLeft {
-    #[argh(switch, description = "swap window")]
+/// Navigation arguments shared by all direction commands.
+#[derive(Parser, Clone, Debug)]
+pub struct NavArgs {
+    /// Swap window instead of moving focus
+    #[arg(short, long)]
     pub swap: bool,
-    #[argh(
-        option,
-        description = "window border size. Necessary for boundary detection"
-    )]
-    pub bordersize: Option<i32>,
-}
 
-/// Focus on the next window. If the current window is already at the edge, focus on the next workspace.
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "u")]
-pub struct CommandUp {
-    #[argh(switch, description = "swap window")]
-    pub swap: bool,
-}
+    /// Move to adjacent monitor instead of workspace when at edge
+    #[arg(short, long)]
+    pub monitor: bool,
 
-/// Focus on the next window. If the current window is already at the edge, focus on the next workspace.
-#[derive(FromArgs, PartialEq, Debug)]
-#[argh(subcommand, name = "d")]
-pub struct CommandDown {
-    #[argh(switch, description = "swap window")]
-    pub swap: bool,
+    /// Use position-based edge detection (is this the extreme window?)
+    #[arg(short, long)]
+    pub position: bool,
+
+    /// Window border size for boundary detection tolerance (pixel mode only)
+    #[arg(short, long, default_value_t = 0)]
+    pub bordersize: i32,
 }
