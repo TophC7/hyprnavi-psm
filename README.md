@@ -2,7 +2,7 @@
 
 Smart navigation for Hyprland. Move focus between windows, and seamlessly continue to adjacent workspaces or monitors at screen edges.
 
-Built for [hyprscroller](https://github.com/dawsers/hyprscroller) and [split-monitor-workspaces](https://github.com/Duckonaut/split-monitor-workspaces), but works great standalone.
+Built for [hyprscrolling](https://github.com/hyprwm/hyprland-plugins/tree/main/hyprscrolling) and [split-monitor-workspaces](https://github.com/Duckonaut/split-monitor-workspaces), but works great standalone.
 
 ## Installation
 
@@ -55,18 +55,24 @@ bind = SUPER SHIFT, K, exec, hyprnavi u -s
 bind = SUPER SHIFT, J, exec, hyprnavi d -s
 ```
 
-### With hyprscroller
+### With hyprscrolling
 
-Use `-p` for proper edge detection with scrolling layouts:
+Use `-p` for position-based edge detection, and `-ps` for column-aware window movement:
 
 ```conf
-# Workspaces (vertical)
+# Focus (vertical workspaces)
 bind = SUPER, K, exec, hyprnavi u
 bind = SUPER, J, exec, hyprnavi d
 
-# Monitors (horizontal) - use position mode
+# Focus across monitors
 bind = SUPER, H, exec, hyprnavi l -pm
 bind = SUPER, L, exec, hyprnavi r -pm
+
+# Move windows (uses layoutmsg movewindowto)
+bind = SUPER SHIFT, K, exec, hyprnavi u -ps
+bind = SUPER SHIFT, J, exec, hyprnavi d -ps
+bind = SUPER SHIFT, H, exec, hyprnavi l -psm
+bind = SUPER SHIFT, L, exec, hyprnavi r -psm
 ```
 
 ### With split-monitor-workspaces
@@ -81,8 +87,9 @@ The plugin is auto-detected. When active, hyprnavi uses `split-workspace` for pr
 | `-m` | Next monitor | Focus neighbor |
 | `-s` | Move window | Swap with neighbor |
 | `-sm` | Move to monitor | Swap with neighbor |
+| `-ps` | Move window | Move across columns* |
 
-Add `-p` for scrolling layouts (hyprscroller) where windows can be off-screen.
+*When hyprscrolling is detected, uses `layoutmsg movewindowto`. Otherwise falls back to normal swap.
 
 Add `-n` to disable workspace wrapping.
 

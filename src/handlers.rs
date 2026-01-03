@@ -55,13 +55,27 @@ pub fn handle_floating(
 }
 
 /// Handle swap/move mode for tiled windows.
-pub fn handle_swap(args: &NavArgs, direction: &Direction, is_at_edge: bool) -> anyhow::Result<()> {
+///
+/// When position mode (`-p`) is enabled with hyprscrolling, uses `layoutmsg movewindowto`
+/// for proper column-aware window movement instead of swapping.
+pub fn handle_swap(
+    args: &NavArgs,
+    direction: &Direction,
+    is_at_edge: bool,
+    plugins: &PluginState,
+) -> anyhow::Result<()> {
     if is_at_edge {
         if args.monitor {
             dispatch("movewindow", &format!("mon:{}", dir_char(direction)))
         } else {
             dispatch("movewindow", dir_char(direction))
         }
+    } else if args.position && plugins.hyprscrolling {
+        // Scroller mode: use layoutmsg for column-aware movement
+        dispatch(
+            "layoutmsg",
+            &format!("movewindowto {}", dir_char(direction)),
+        )
     } else {
         Dispatch::call(DispatchType::SwapWindow(direction.clone())).context("Failed to swap")
     }

@@ -50,7 +50,7 @@ fn main() -> anyhow::Result<()> {
     if active_client.floating {
         handlers::handle_floating(args, &direction, is_at_edge)
     } else if args.swap {
-        handlers::handle_swap(args, &direction, is_at_edge)
+        handlers::handle_swap(args, &direction, is_at_edge, &plugins)
     } else {
         handlers::handle_focus(cmd, &active_client, &ws_info, is_at_edge, &plugins)
     }
