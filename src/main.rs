@@ -40,7 +40,10 @@ fn main() -> anyhow::Result<()> {
     let ws_info = workspace::compute_workspace_info(&all_clients);
 
     // Determine if we're at the edge using selected detection mode
-    let is_at_edge = if args.position {
+    let is_at_edge = if args.position && plugins.hyprscrolling {
+        // Scroller mode: column-aware edge detection for u/d
+        edge::is_at_edge_scroller(&active_client, &all_clients, &direction)
+    } else if args.position {
         edge::is_at_edge_position(&active_client, &ws_info, &direction)
     } else {
         edge::is_at_edge_pixel(&active_client, &active_monitor, &direction, args.bordersize)
@@ -50,7 +53,16 @@ fn main() -> anyhow::Result<()> {
     if active_client.floating {
         handlers::handle_floating(args, &direction, is_at_edge)
     } else if args.swap {
-        handlers::handle_swap(args, &direction, is_at_edge, &plugins)
+        // For scroller mode: check if window is alone in its column (can't promote further)
+        let is_alone = edge::is_alone_in_column(&active_client, &all_clients);
+        handlers::handle_swap(
+            args,
+            &direction,
+            is_at_edge,
+            is_alone,
+            &plugins,
+            &active_monitor,
+        )
     } else {
         handlers::handle_focus(cmd, &active_client, &ws_info, is_at_edge, &plugins)
     }

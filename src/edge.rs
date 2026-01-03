@@ -1,13 +1,14 @@
 //! Edge detection for determining when to switch workspaces/monitors.
 //!
-//! Two detection modes are available:
+//! Three detection modes are available:
 //! - **Pixel mode** (default): Checks if window is at monitor boundary
 //! - **Position mode** (`-p`): Checks if window is the extreme in that direction
+//! - **Scroller mode** (`-p` + hyprscrolling): Column-aware edge detection
 
 use std::collections::HashMap;
 
 use hyprland::{
-    data::{Client, Monitor},
+    data::{Client, Clients, Monitor},
     dispatch::Direction,
     keyword::Keyword,
 };
@@ -41,6 +42,51 @@ pub fn is_at_edge_position(
         .as_ref()
         .map(|a| *a == client.address)
         .unwrap_or(true)
+}
+
+/// Check if client is at edge for hyprscrolling layouts.
+///
+/// For l/r: checks if in leftmost/rightmost column (workspace-level).
+/// For u/d: checks if at top/bottom of current column (column-level).
+///
+/// In hyprscrolling, windows in the same column share the same x position.
+pub fn is_at_edge_scroller(client: &Client, clients: &Clients, direction: &Direction) -> bool {
+    let my_x = client.at.0;
+    let my_y = client.at.1;
+    let my_ws = client.workspace.id;
+
+    // Check if we're at the edge in the given direction
+    // For hyprscrolling: l/r checks column position, u/d checks within-column position
+    clients.iter().all(|c| {
+        // Skip windows not in our workspace or floating
+        if c.workspace.id != my_ws || c.floating {
+            return true;
+        }
+
+        match direction {
+            // For l/r: check if any column exists further in that direction
+            Direction::Left => c.at.0 >= my_x, // No column to our left
+            Direction::Right => c.at.0 <= my_x, // No column to our right
+
+            // For u/d: check within our column (same x) if any window exists further
+            Direction::Up => c.at.0 != my_x || c.at.1 >= my_y,
+            Direction::Down => c.at.0 != my_x || c.at.1 <= my_y,
+        }
+    })
+}
+
+/// Check if client is alone in its column (no other windows share the same x position).
+///
+/// Used to determine if a window can be promoted further or should move to monitor.
+pub fn is_alone_in_column(client: &Client, clients: &Clients) -> bool {
+    let my_x = client.at.0;
+    let my_ws = client.workspace.id;
+    let my_addr = &client.address;
+
+    // True if no other window shares our column (same x, same workspace, not floating)
+    !clients
+        .iter()
+        .any(|c| c.workspace.id == my_ws && !c.floating && c.at.0 == my_x && c.address != *my_addr)
 }
 
 /// Check if client is at edge using pixel-based detection.

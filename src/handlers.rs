@@ -7,8 +7,9 @@ use std::collections::HashMap;
 
 use anyhow::Context;
 use hyprland::{
-    data::Client,
+    data::{Client, Monitor, Monitors},
     dispatch::{Direction, Dispatch, DispatchType, WindowIdentifier},
+    shared::HyprData,
 };
 
 use crate::{
@@ -62,23 +63,76 @@ pub fn handle_swap(
     args: &NavArgs,
     direction: &Direction,
     is_at_edge: bool,
+    is_alone_in_column: bool,
     plugins: &PluginState,
+    current_monitor: &Monitor,
 ) -> anyhow::Result<()> {
+    // Scroller mode
+    if args.position && plugins.hyprscrolling {
+        let is_vertical = matches!(direction, Direction::Up | Direction::Down);
+        let is_forward = matches!(direction, Direction::Right | Direction::Down);
+
+        // At edge: move to monitor (l/r) or workspace (u/d)
+        if is_at_edge {
+            if is_vertical {
+                // Move to adjacent workspace
+                let delta = if is_forward { "+1" } else { "-1" };
+                return if plugins.split_monitor_workspaces {
+                    dispatch("split-movetoworkspace", delta)
+                } else {
+                    dispatch("movetoworkspace", &format!("e{}", delta))
+                };
+            } else if args.monitor
+                && is_alone_in_column
+                && has_monitor_in_direction(current_monitor, direction)
+            {
+                // Only move to monitor if already alone in column (can't promote further)
+                return dispatch("movewindow", &format!("mon:{}", dir_char(direction)));
+            }
+        }
+
+        // Column movement/promotion (prioritized over monitor movement)
+        return dispatch(
+            "layoutmsg",
+            &format!("movewindowto {}", dir_char(direction)),
+        );
+    }
+
+    // Standard mode
     if is_at_edge {
         if args.monitor {
             dispatch("movewindow", &format!("mon:{}", dir_char(direction)))
         } else {
             dispatch("movewindow", dir_char(direction))
         }
-    } else if args.position && plugins.hyprscrolling {
-        // Scroller mode: use layoutmsg for column-aware movement
-        dispatch(
-            "layoutmsg",
-            &format!("movewindowto {}", dir_char(direction)),
-        )
     } else {
         Dispatch::call(DispatchType::SwapWindow(direction.clone())).context("Failed to swap")
     }
+}
+
+/// Check if a monitor exists in the given direction from the current monitor.
+///
+/// Uses simple position comparison (m.x < cx for left, etc.) which handles
+/// rotated monitors correctly since it doesn't depend on reported width/height.
+fn has_monitor_in_direction(current: &Monitor, direction: &Direction) -> bool {
+    let Ok(monitors) = Monitors::get() else {
+        return false;
+    };
+
+    let (cx, cy) = (current.x, current.y);
+
+    monitors.iter().any(|m| {
+        if m.id == current.id {
+            return false;
+        }
+
+        match direction {
+            Direction::Left => m.x < cx,
+            Direction::Right => m.x > cx,
+            Direction::Up => m.y < cy,
+            Direction::Down => m.y > cy,
+        }
+    })
 }
 
 /// Handle focus movement for tiled windows.
