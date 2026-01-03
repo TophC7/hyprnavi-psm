@@ -66,6 +66,12 @@ pub struct NavArgs {
     #[arg(short, long)]
     pub position: bool,
 
+    /// Disable workspace wrapping (don't go from last to first)
+    /// Note: When split-monitor-workspaces plugin is active, wrapping is
+    /// controlled by the plugin's `enable_wrapping` config instead.
+    #[arg(short = 'n', long = "no-wrap")]
+    pub no_wrap: bool,
+
     /// Window border size for boundary detection tolerance (pixel mode only)
     #[arg(short, long, default_value_t = 0)]
     pub bordersize: i32,
