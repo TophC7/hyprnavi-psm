@@ -96,6 +96,7 @@
             license = licenses.mit;
             maintainers = [ "tophc7" ];
             platforms = platforms.linux;
+            mainProgram = "hyprnavi";
           };
         };
 
