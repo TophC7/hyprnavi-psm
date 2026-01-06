@@ -55,45 +55,34 @@ pub fn is_at_edge_scroller(client: &Client, clients: &Clients, direction: &Direc
     let my_y = client.at.1;
     let my_ws = client.workspace.id;
 
-    // Check if we're at the edge in the given direction
-    // For hyprscrolling: l/r checks column position, u/d checks within-column position
     clients.iter().all(|c| {
-        // Skip windows not in our workspace or floating
         if c.workspace.id != my_ws || c.floating {
             return true;
         }
-
         match direction {
-            // For l/r: check if any column exists further in that direction
-            Direction::Left => c.at.0 >= my_x, // No column to our left
-            Direction::Right => c.at.0 <= my_x, // No column to our right
-
-            // For u/d: check within our column (same x) if any window exists further
+            // l/r: no column further in that direction
+            Direction::Left => c.at.0 >= my_x,
+            Direction::Right => c.at.0 <= my_x,
+            // u/d: no window further in our column (same x)
             Direction::Up => c.at.0 != my_x || c.at.1 >= my_y,
             Direction::Down => c.at.0 != my_x || c.at.1 <= my_y,
         }
     })
 }
 
-/// Check if client is alone in its column (no other windows share the same x position).
-///
-/// Used to determine if a window can be promoted further or should move to monitor.
+/// Returns true if no other window shares this column (same x position).
+/// Used to decide if window can promote further or should move to monitor.
 pub fn is_alone_in_column(client: &Client, clients: &Clients) -> bool {
     let my_x = client.at.0;
     let my_ws = client.workspace.id;
     let my_addr = &client.address;
 
-    // True if no other window shares our column (same x, same workspace, not floating)
     !clients
         .iter()
         .any(|c| c.workspace.id == my_ws && !c.floating && c.at.0 == my_x && c.address != *my_addr)
 }
 
-/// Check if client is at edge using pixel-based detection.
-///
-/// Returns true if the window is physically at the monitor boundary,
-/// accounting for gaps and reserved areas (bars, etc.). This is the
-/// default mode, suitable for traditional tiled layouts.
+/// Pixel-based edge detection (default mode). Accounts for gaps and reserved areas.
 pub fn is_at_edge_pixel(
     client: &Client,
     monitor: &Monitor,
@@ -101,19 +90,13 @@ pub fn is_at_edge_pixel(
     bordersize: i32,
 ) -> bool {
     let gap = get_gaps_out();
-
-    // Client position and size
     let (cx, cy) = (client.at.0 as i32, client.at.1 as i32);
     let (cw, ch) = (client.size.0 as i32, client.size.1 as i32);
-
-    // Monitor position and size
     let (mx, my) = (monitor.x, monitor.y);
     let (mw, mh) = (monitor.width as i32, monitor.height as i32);
-
-    // Reserved areas (bars, etc.): Hyprland order is (top, bottom, right, left)
+    // Hyprland reserved order: (top, bottom, right, left)
     let reserved = &monitor.reserved;
 
-    // Check if window edge is within bordersize tolerance of monitor edge
     match direction {
         Direction::Left => (cx - (mx + reserved.3 as i32 + gap)).abs() <= bordersize,
         Direction::Right => ((cx + cw) - (mx + mw - reserved.2 as i32 - gap)).abs() <= bordersize,
@@ -122,7 +105,6 @@ pub fn is_at_edge_pixel(
     }
 }
 
-/// Get the outer gap size from Hyprland config.
 fn get_gaps_out() -> i32 {
     Keyword::get("general:gaps_out")
         .ok()

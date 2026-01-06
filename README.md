@@ -62,22 +62,22 @@ bind = SUPER SHIFT, J, exec, hyprnavi d -s
 
 ### With hyprscrolling
 
-Use `-p` for position-based edge detection, and `-ps` for column-aware window movement:
+hyprscrolling arranges windows in columns (vertical stacks). Use `-p` for position-based edge detection that works with off-screen windows:
 
 ```conf
-# Focus (vertical workspaces)
-bind = SUPER, K, exec, hyprnavi u
-bind = SUPER, J, exec, hyprnavi d
+# Focus with scrolling support
+bind = SUPER, H, exec, hyprnavi l -p
+bind = SUPER, L, exec, hyprnavi r -p
+bind = SUPER, K, exec, hyprnavi u -p
+bind = SUPER, J, exec, hyprnavi d -p
 
-# Focus across monitors
-bind = SUPER, H, exec, hyprnavi l -pm
-bind = SUPER, L, exec, hyprnavi r -pm
-
-# Move windows (uses layoutmsg movewindowto)
-bind = SUPER SHIFT, K, exec, hyprnavi u -ps
-bind = SUPER SHIFT, J, exec, hyprnavi d -ps
+# Move windows (column-aware)
+# - l/r: promotes window to its own column, then moves to monitor
+# - u/d: moves within column, then to adjacent workspace
 bind = SUPER SHIFT, H, exec, hyprnavi l -psm
 bind = SUPER SHIFT, L, exec, hyprnavi r -psm
+bind = SUPER SHIFT, K, exec, hyprnavi u -ps
+bind = SUPER SHIFT, J, exec, hyprnavi d -ps
 ```
 
 ### With split-monitor-workspaces
@@ -86,15 +86,20 @@ The plugin is auto-detected. When active, hyprnavi uses `split-workspace` for pr
 
 ## Behavior Summary
 
-| Flags  | At Edge         | Not at Edge          |
-| ------ | --------------- | -------------------- |
-| (none) | Next workspace  | Focus neighbor       |
-| `-m`   | Next monitor    | Focus neighbor       |
-| `-s`   | Move window     | Swap with neighbor   |
-| `-sm`  | Move to monitor | Swap with neighbor   |
-| `-ps`  | Move window     | Move across columns* |
+| Flags   | At Edge            | Not at Edge            |
+| ------- | ------------------ | ---------------------- |
+| (none)  | Next workspace     | Focus neighbor         |
+| `-m`    | Focus monitor      | Focus neighbor         |
+| `-p`    | Next workspace     | Focus neighbor*        |
+| `-pm`   | Focus monitor      | Focus neighbor*        |
+| `-s`    | Move to workspace  | Swap with neighbor     |
+| `-sm`   | Move to monitor    | Swap with neighbor     |
+| `-ps`   | Move to workspace  | Promote in column*     |
+| `-psm`  | Move to monitor**  | Promote in column*     |
 
-*When hyprscrolling is detected, uses `layoutmsg movewindowto`. Otherwise falls back to normal swap.
+*With hyprscrolling: uses `layoutmsg focus/movewindowto` for proper scrolling behavior.
+
+**Only moves to monitor when window is already alone in its column (can't promote further). This prioritizes column promotion over monitor movement.
 
 Add `-n` to disable workspace wrapping.
 

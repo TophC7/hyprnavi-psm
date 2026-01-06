@@ -28,7 +28,6 @@ pub enum Command {
 }
 
 impl Command {
-    /// Returns the navigation direction for this command.
     pub fn direction(&self) -> Direction {
         match self {
             Self::Up(_) => Direction::Up,
@@ -38,20 +37,18 @@ impl Command {
         }
     }
 
-    /// Returns the navigation arguments.
     pub fn args(&self) -> &NavArgs {
         match self {
             Self::Up(a) | Self::Down(a) | Self::Left(a) | Self::Right(a) => a,
         }
     }
 
-    /// Returns true if this direction goes "forward" (right/down = next workspace).
+    /// Right/down are "forward" (toward next workspace).
     pub fn is_forward(&self) -> bool {
         matches!(self, Self::Right(_) | Self::Down(_))
     }
 }
 
-/// Navigation arguments shared by all direction commands.
 #[derive(Parser, Clone, Debug)]
 pub struct NavArgs {
     /// Swap window instead of moving focus

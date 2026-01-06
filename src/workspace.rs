@@ -1,47 +1,29 @@
-//! Workspace metadata pre-computation for efficient navigation.
-//!
-//! Computes extreme window positions and workspace relationships in a single
-//! O(n) pass over all clients, enabling O(1) lookups during navigation.
+//! Pre-computes workspace metadata (extreme positions, adjacency) in O(n)
+//! for O(1) lookups during navigation.
 
 use std::collections::HashMap;
 
 use hyprland::{data::Clients, shared::Address};
 
-/// Pre-computed workspace metadata for O(1) lookups.
-///
-/// Stores the addresses of extreme windows (leftmost, rightmost, etc.) and
-/// adjacent workspace relationships for efficient cross-workspace navigation.
+/// Extreme window positions and adjacent workspace IDs for a workspace.
 #[derive(Default)]
 pub struct WorkspaceInfo {
-    /// Address of the leftmost window in this workspace.
     pub leftmost: Option<Address>,
-    /// Address of the rightmost window in this workspace.
     pub rightmost: Option<Address>,
-    /// Address of the topmost window in this workspace.
     pub topmost: Option<Address>,
-    /// Address of the bottommost window in this workspace.
     pub bottommost: Option<Address>,
-    /// Previous workspace ID (wraps around).
+    /// Wraps around to last workspace.
     pub prev_ws: i32,
-    /// Next workspace ID (wraps around).
+    /// Wraps around to first workspace.
     pub next_ws: i32,
 }
 
-/// Compute workspace metadata for all active workspaces.
-///
-/// Performs a single O(n) pass over all clients to determine:
-/// - Extreme window positions (leftmost, rightmost, topmost, bottommost)
-/// - Workspace adjacency relationships (prev/next)
-///
-/// Floating windows and special workspaces are excluded.
+/// Excludes floating windows and special workspaces.
 pub fn compute_workspace_info(clients: &Clients) -> HashMap<i32, WorkspaceInfo> {
     let mut info: HashMap<i32, WorkspaceInfo> = HashMap::new();
-    // Track coordinates alongside addresses for comparison
-    // Format: (min_x, max_x, min_y, max_y)
-    let mut coords: HashMap<i32, (i16, i16, i16, i16)> = HashMap::new();
+    let mut coords: HashMap<i32, (i16, i16, i16, i16)> = HashMap::new(); // (min_x, max_x, min_y, max_y)
 
     for client in clients.iter() {
-        // Skip floating windows, special workspaces, and invalid workspace IDs
         if client.workspace.id <= 0
             || client.floating
             || client.workspace.name.starts_with("special")
@@ -58,7 +40,6 @@ pub fn compute_workspace_info(clients: &Clients) -> HashMap<i32, WorkspaceInfo> 
             .entry(ws)
             .or_insert((i16::MAX, i16::MIN, i16::MAX, i16::MIN));
 
-        // Update extreme positions if this window is more extreme
         if x < coord.0 {
             coord.0 = x;
             entry.leftmost = Some(client.address.clone());
@@ -77,14 +58,13 @@ pub fn compute_workspace_info(clients: &Clients) -> HashMap<i32, WorkspaceInfo> 
         }
     }
 
-    // Compute prev/next workspace relationships (sorted order with wrap-around)
+    // Compute prev/next with wrap-around
     let mut ws_ids: Vec<i32> = info.keys().copied().collect();
     ws_ids.sort_unstable();
     let len = ws_ids.len();
 
     for (i, &ws) in ws_ids.iter().enumerate() {
         if let Some(entry) = info.get_mut(&ws) {
-            // Wrap around: first workspace's prev is last, last's next is first
             entry.prev_ws = ws_ids[(i + len - 1) % len];
             entry.next_ws = ws_ids[(i + 1) % len];
         }
