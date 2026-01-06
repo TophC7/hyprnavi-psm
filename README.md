@@ -5,9 +5,13 @@
   </picture>
   hyprnavi
 </h1>
-Smart navigation for Hyprland. Move focus between windows, and seamlessly continue to adjacent workspaces or monitors at screen edges.
 
-Built for [hyprscrolling](https://github.com/hyprwm/hyprland-plugins/tree/main/hyprscrolling) and [split-monitor-workspaces](https://github.com/Duckonaut/split-monitor-workspaces), but works great standalone.
+
+> Smart navigation for Hyprland. Move focus between windows, and seamlessly continue to adjacent workspaces or monitors at screen edges.
+>
+> Built for [hyprscrolling](https://github.com/hyprwm/hyprland-plugins/tree/main/hyprscrolling) and [split-monitor-workspaces](https://github.com/Duckonaut/split-monitor-workspaces), but works great standalone.
+> 
+> [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TophC7/hyprnavi-psm)
 
 ## Installation
 
